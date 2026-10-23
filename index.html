@@ -1,0 +1,3371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>CareNow Health — Chandigarh Tricity (Healthcare & Live Queue Tracker)</title>
+<meta name="description" content="Official Chandigarh Tricity healthcare tracker. Live OPD queues, nearest hospital finder within 10 km, sequential token slips, and 24x7 emergency casualty triage.">
+
+<!-- Supabase JS SDK via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%230E7C86'/%3E%3Cpath d='M17 8h6v24h-6zM8 17h24v6H8z' fill='%23fff'/%3E%3Cpath d='M10 20l5.5 0 2.5-6.5 4 13 2.5-9 1.5 2.5 4 0' stroke='%235EEAD4' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='20' cy='20' r='2' fill='%235EEAD4'/%3E%3C/svg%3E">
+
+<style>
+/* ========================================================
+   MODERN LINE-FREE DESIGN SYSTEM
+   Soft container shadows, generous whitespace, zero hard borders,
+   minimum 44px touch targets for high-stress medical triage.
+   ======================================================== */
+:root {
+  --bg: #F4F7FA;
+  --surface: #FFFFFF;
+  --surface-alt: #F8FAFC;
+  --surface-hover: #F1F5F9;
+  --ink: #0F172A;
+  --muted: #64748B;
+  --subtle: #94A3B8;
+
+  /* Primary Palette */
+  --primary-teal: #0E7C86;
+  --primary-teal-hover: #0a656d;
+  --primary-teal-soft: #E6F7F9;
+  --header-navy: #0B2A43;
+
+  /* Status Accents */
+  --success-green: #10B981;
+  --success-green-bg: #ECFDF5;
+  --warning-amber: #F59E0B;
+  --warning-amber-bg: #FFFBEB;
+  --emergency-coral: #0284C7;
+  --emergency-coral-hover: #0369A1;
+  --emergency-coral-bg: #E0F2FE;
+  --danger-red: #EF4444;
+  --danger-red-bg: #FEF2F2;
+
+  /* Facility Category Ribbons */
+  --cat-govt: #2563EB;
+  --cat-govt-bg: #EFF6FF;
+  --cat-pvt: #7C3AED;
+  --cat-pvt-bg: #F5F3FF;
+  --cat-clinic: #0D9488;
+  --cat-clinic-bg: #F0FDFA;
+
+  /* Geometry & Shadows */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 9999px;
+
+  --shadow-xs: 0 1px 3px rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 4px 20px rgba(15, 23, 42, 0.05), 0 2px 6px rgba(15, 23, 42, 0.02);
+  --shadow-md: 0 10px 25px -3px rgba(15, 23, 42, 0.07), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
+  --shadow-lg: 0 20px 40px -4px rgba(15, 23, 42, 0.12);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  padding-bottom: 76px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  border: none;
+}
+button { cursor: pointer; }
+a { text-decoration: none; color: inherit; }
+
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+/* ========================================================
+   STICKY HEADER & NAVIGATION
+   ======================================================== */
+header.app-header {
+  height: 64px;
+  background: var(--header-navy);
+  color: #FFFFFF;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 4px 20px rgba(11, 42, 67, 0.18);
+}
+.header-inner {
+  height: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  color: #FFFFFF;
+  user-select: none;
+  cursor: pointer;
+}
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.brand:hover .brand-mark {
+  transform: rotate(-6deg) scale(1.08);
+}
+.brand-name-main span { color: #5EEAD4; }
+.tricity-tag {
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(94, 234, 212, 0.18);
+  color: #5EEAD4;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-hdr {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  transition: background 0.15s, transform 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-hdr:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+.btn-hdr-emerg {
+  background: #0284C7;
+  color: #FFFFFF;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+.btn-hdr-emerg:hover { background: #0369A1; }
+
+.cloud-sync-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  color: #E2E8F0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cloud-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success-green);
+  box-shadow: 0 0 8px var(--success-green);
+}
+
+/* ========================================================
+   TOP STATS STRIP & METRICS
+   ======================================================== */
+.stats-strip {
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  padding: 12px 0;
+  margin-bottom: 8px;
+}
+.stats-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 12px;
+  text-align: center;
+  flex-wrap: wrap;
+}
+.stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.stat-pill strong {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+}
+.stat-dot-green {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success-green);
+  display: inline-block;
+  box-shadow: 0 0 6px var(--success-green);
+}
+
+/* ========================================================
+   GATEWAY SCREEN
+   ======================================================== */
+.gateway-screen {
+  padding: 24px 0 36px 0;
+}
+.gateway-hero {
+  text-align: center;
+  max-width: 840px;
+  margin: 10px auto 30px;
+}
+.gateway-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  background: var(--emergency-coral-bg);
+  color: var(--emergency-coral-hover);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 14px;
+}
+.pulse-beacon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--emergency-coral);
+  box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+  animation: beaconPulse 1.8s infinite;
+}
+@keyframes beaconPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(2, 132, 199, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+}
+.gateway-title {
+  font-size: clamp(26px, 4.5vw, 38px);
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  line-height: 1.2;
+  margin: 0 0 12px 0;
+  color: var(--ink);
+}
+.gateway-sub {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0 auto;
+  max-width: 700px;
+}
+
+/* 2-Split Gateway Cards */
+.gateway-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  margin-bottom: 28px;
+}
+@media (max-width: 768px) {
+  .gateway-grid { grid-template-columns: 1fr; }
+}
+.gateway-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.gateway-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+.gateway-card.simple { background: linear-gradient(180deg, #FFFFFF 0%, #F0FDFA 100%); }
+.gateway-card.emergency { background: linear-gradient(180deg, #FFFFFF 0%, #F0F9FF 100%); }
+.gw-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.gw-badge-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.gw-badge-pill.simple { background: #CCFBF1; color: #0F766E; }
+.gw-badge-pill.emergency { background: #E0F2FE; color: #0284C7; }
+.gw-icon-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+}
+.gw-icon-circle.simple { background: var(--primary-teal-soft); color: var(--primary-teal); }
+.gw-icon-circle.emergency { background: var(--emergency-coral-bg); color: var(--emergency-coral); }
+.gateway-card h2 {
+  font-size: 23px;
+  font-weight: 850;
+  letter-spacing: -0.4px;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+.gateway-card p.gw-desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0 0 20px;
+}
+.gw-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.gw-feature-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.gw-chk {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.gw-chk.simple { background: #CCFBF1; color: #0F766E; }
+.gw-chk.emergency { background: #E0F2FE; color: #0284C7; }
+
+.gw-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--radius-sm);
+  font-size: 14.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s, background 0.15s, box-shadow 0.15s;
+}
+.gw-btn-simple {
+  background: var(--primary-teal);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(14, 124, 134, 0.25);
+}
+.gw-btn-simple:hover {
+  background: var(--primary-teal-hover);
+  transform: translateY(-2px);
+}
+.gw-btn-token {
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+  color: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.32);
+}
+.gw-btn-token:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+.gw-btn-emerg-secondary {
+  background: var(--surface-alt);
+  color: var(--ink);
+  margin-top: 8px;
+}
+.gw-btn-emerg-secondary:hover {
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+
+/* Gateway SOS Strip */
+.gateway-sos-strip {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 26px;
+}
+.gw-sos-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.gw-sos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 768px) {
+  .gw-sos-grid { grid-template-columns: 1fr 1fr; }
+}
+.gw-sos-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.gw-sos-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.gw-sos-item.red { background: #FEF2F2; color: #991B1B; }
+.gw-sos-item.blue { background: #EFF6FF; color: #1E40AF; }
+.gw-sos-item.green { background: #ECFDF5; color: #065F46; }
+.gw-sos-item.amber { background: #FFFBEB; color: #92400E; }
+.gw-sos-item strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.gw-sos-item small {
+  display: block;
+  font-size: 11px;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+/* ========================================================
+   ACTIVE TOKEN HUD BAR
+   ======================================================== */
+.active-token-hud {
+  background: linear-gradient(135deg, #071D2E 0%, #0B2A43 60%, #0E4856 100%);
+  color: #FFFFFF;
+  border-radius: var(--radius-md);
+  padding: 16px 22px;
+  margin: 12px 0 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: var(--shadow-md);
+}
+@media (max-width: 640px) {
+  .active-token-hud { flex-direction: column; align-items: stretch; text-align: center; }
+}
+.hud-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.hud-pulse-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #38BDF8;
+  box-shadow: 0 0 12px #38BDF8;
+  animation: beaconPulse 1.4s infinite;
+  flex-shrink: 0;
+}
+.hud-title {
+  font-size: 14px;
+  font-weight: 800;
+}
+.hud-title strong {
+  color: #7DD3FC;
+  background: rgba(125, 211, 252, 0.16);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-family: ui-monospace, monospace;
+  font-size: 15px;
+  margin-left: 4px;
+}
+.hud-sub {
+  font-size: 12px;
+  color: #CBD5E1;
+  margin-top: 3px;
+}
+.hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+.hud-btn-pass {
+  background: #38BDF8;
+  color: #071D2E;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  transition: transform 0.15s;
+}
+.hud-btn-pass:hover { transform: scale(1.04); background: #7DD3FC; }
+.hud-btn-print {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+.hud-btn-print:hover { background: rgba(255, 255, 255, 0.25); }
+
+/* ========================================================
+   SEARCH BAR & REAL-TIME FILTERS
+   ======================================================== */
+.search-block {
+  margin: 18px 0 14px;
+  position: relative;
+}
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 6px 12px 6px 18px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s, background 0.2s;
+}
+.search-input-wrap:focus-within {
+  box-shadow: 0 8px 24px -2px rgba(14, 124, 134, 0.20);
+  background: #FFFFFF;
+}
+.search-input-wrap .search-ico {
+  color: var(--muted);
+  font-size: 18px;
+  margin-right: 10px;
+}
+.search-input-wrap input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  font-size: 15px;
+  min-height: 42px;
+  color: var(--ink);
+  outline: 0;
+}
+.search-input-wrap .clear-btn {
+  background: var(--surface-hover);
+  color: var(--muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+/* Quick Filter Chips (Including 10 km Radius) */
+.quick-chips-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 14px;
+  scrollbar-width: none;
+}
+.quick-chips-row::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-xs);
+  transition: all 0.15s;
+}
+.chip:hover {
+  background: var(--surface-hover);
+  transform: translateY(-1px);
+}
+.chip.active {
+  background: var(--primary-teal);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(14, 124, 134, 0.3);
+}
+.chip.geo-active {
+  background: #0284C7;
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.filter-bar {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.filter-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.category-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cat-tab {
+  background: var(--surface-alt);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  min-height: 38px;
+  transition: all 0.15s;
+}
+.cat-tab:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+.cat-tab.active {
+  background: var(--header-navy);
+  color: #FFFFFF;
+}
+
+/* ========================================================
+   HOSPITAL CARDS (LINE-FREE WITH DISTANCE BADGE)
+   ======================================================== */
+.results-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.results-meta b { color: var(--ink); }
+
+.cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.place-card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+.place-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Facility Category Left Ribbons */
+.place-card.cat-govt_hospital { border-left: 5px solid var(--cat-govt); }
+.place-card.cat-pvt_hospital { border-left: 5px solid var(--cat-pvt); }
+.place-card.cat-clinic { border-left: 5px solid var(--cat-clinic); }
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.cat-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+}
+.cat-badge.govt_hospital { background: var(--cat-govt-bg); color: var(--cat-govt); }
+.cat-badge.pvt_hospital { background: var(--cat-pvt-bg); color: var(--cat-pvt); }
+.cat-badge.clinic { background: var(--cat-clinic-bg); color: var(--cat-clinic); }
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+}
+.status-badge.open { background: var(--success-green-bg); color: var(--success-green); }
+
+.distance-badge {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: #E0F2FE;
+  color: #0369A1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-247 {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: #F1F5F9;
+  color: var(--ink);
+}
+
+.card-top-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.place-card h3 {
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -0.3px;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+.place-area {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Ongoing Token Display & Live Wait Box */
+.card-queue-counters {
+  display: flex;
+  gap: 10px;
+}
+.token-serving-box {
+  background: #F8FAFC;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  min-width: 95px;
+}
+.token-serving-box small {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.3px;
+}
+.token-serving-box strong {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--primary-teal);
+  font-family: ui-monospace, monospace;
+}
+
+.wait-box {
+  text-align: right;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  min-width: 95px;
+}
+.wait-box.green { background: var(--success-green-bg); color: var(--success-green); }
+.wait-box.amber { background: var(--warning-amber-bg); color: #B45309; }
+.wait-box.coral { background: var(--emergency-coral-bg); color: var(--emergency-coral); }
+.wait-box small {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.wait-box strong {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.card-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 14px;
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.card-meta-bar span b { color: var(--ink); }
+
+/* Resident Doctors Drawer */
+.doc-trigger {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--primary-teal);
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.doc-trigger:hover { text-decoration: underline; }
+.doctors-drawer {
+  display: none;
+  background: var(--surface-alt);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.doctors-drawer.open { display: block; }
+.doc-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed #E2E8F0;
+  font-size: 12.5px;
+}
+.doc-item-row:last-child { border-bottom: none; }
+.doc-name { font-weight: 750; color: var(--ink); }
+.doc-spec { color: var(--muted); font-size: 11.5px; }
+
+/* 44px+ Accessible Card Action Buttons */
+.card-actions-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 6px;
+}
+.btn-opd-token {
+  flex: 1.2;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-teal);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.btn-opd-token:hover { background: var(--primary-teal-hover); }
+
+.btn-directions {
+  flex: 1;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+.btn-directions:hover { background: var(--surface-hover); }
+
+.btn-call {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-call:hover { background: var(--surface-hover); }
+
+.btn-report-link, .btn-flag-link {
+  min-height: 44px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-flag-link { color: #2563EB; }
+
+.verified-note {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 8px;
+  text-align: right;
+}
+.false-claim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: #EFF6FF;
+  color: #1D4ED8;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+/* ========================================================
+   EMERGENCY CARE VIEW
+   ======================================================== */
+.emergency-screen {
+  background: #F0F9FF;
+  min-height: calc(100vh - 64px);
+  padding: 24px 0 60px;
+}
+.emergency-top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.btn-back-simple {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  background: #FFFFFF;
+  color: var(--emergency-coral);
+  font-size: 13.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-xs);
+}
+.sos-banner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 600px) {
+  .sos-banner-grid { grid-template-columns: 1fr; }
+}
+.huge-sos-btn {
+  min-height: 76px;
+  border-radius: var(--radius-md);
+  background: var(--emergency-coral);
+  color: #FFFFFF;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.35);
+  transition: transform 0.2s;
+}
+.huge-sos-btn:hover { transform: translateY(-2px); }
+.huge-sos-btn.sos-112 { background: #0369A1; }
+.huge-sos-btn small {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.emerg-card {
+  background: #FFFFFF;
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+  border-left: 6px solid var(--emergency-coral);
+}
+.emerg-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.emerg-card h3 {
+  font-size: 18px;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+
+.btn-token {
+  background: var(--emergency-coral-bg);
+  color: var(--emergency-coral);
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s;
+}
+.btn-token:hover { background: #BAE6FD; }
+
+/* ========================================================
+   MODALS & BACKDROPS (LINE-FREE)
+   ======================================================== */
+.backdrop {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.backdrop.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.modal-box {
+  width: min(100%, 500px);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  box-shadow: var(--shadow-lg);
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: translateY(18px) scale(0.98);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.backdrop.show .modal-box { transform: translateY(0) scale(1); }
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 850;
+  margin: 0 0 4px;
+  letter-spacing: -0.4px;
+}
+.modal-header p {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 0;
+}
+.close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--muted);
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+}
+.close-btn:hover { background: var(--surface-hover); color: var(--ink); }
+
+.form-group {
+  margin-bottom: 16px;
+  text-align: left;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  font-size: 14.5px;
+  color: var(--ink);
+  outline: 0;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.form-group textarea {
+  min-height: 88px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(14, 124, 134, 0.18);
+}
+
+.btn-primary {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-teal);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 800;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--primary-teal-hover); }
+
+/* ========================================================
+   DIGITAL MEDICAL TOKEN PASS MODAL
+   ======================================================== */
+.medical-pass-box {
+  width: min(100%, 480px);
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.pass-header {
+  background: linear-gradient(135deg, #071D2E 0%, #0B2A43 60%, #0E4856 100%);
+  color: #FFFFFF;
+  padding: 22px 24px;
+}
+.pass-token-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.pass-token-code {
+  font-family: ui-monospace, monospace;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: #38BDF8;
+  text-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+}
+.pass-barcode-sim {
+  display: flex;
+  gap: 3px;
+  height: 36px;
+  align-items: flex-end;
+  opacity: 0.85;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.bar-line { background: #FFFFFF; border-radius: 1px; }
+
+.pass-body { padding: 22px 24px; }
+.pass-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
+  background: var(--surface-alt);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+.pass-info-grid div strong {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+/* ========================================================
+   PRINT SLIP STYLING (@media print)
+   Isolates token slip cleanly for PDF download & direct print
+   ======================================================== */
+#printableTokenSlip {
+  display: none;
+}
+
+@media print {
+  /* Hide all app chrome, headers, navigation, modals, and backdrops */
+  header, nav, .mobile-bottom-bar, .toast-notice, .gateway-screen, .wrap, .backdrop, #appContent, .active-token-hud {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  #printableTokenSlip {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 10mm !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  }
+  #printableTokenSlip * {
+    visibility: visible !important;
+  }
+  .print-ticket-box {
+    border: 2px solid #0B2A43 !important;
+    padding: 24px !important;
+    max-width: 520px !important;
+    margin: 0 auto !important;
+    border-radius: 12px !important;
+    page-break-inside: avoid !important;
+  }
+  .print-header {
+    text-align: center !important;
+    border-bottom: 2px solid #0E7C86 !important;
+    padding-bottom: 14px !important;
+    margin-bottom: 16px !important;
+  }
+  .print-token-num {
+    font-size: 44px !important;
+    font-weight: 900 !important;
+    font-family: monospace !important;
+    text-align: center !important;
+    color: #0E7C86 !important;
+    margin: 12px 0 !important;
+    letter-spacing: 2px !important;
+  }
+  .print-field-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px dotted #ccc !important;
+    font-size: 14px !important;
+  }
+  .print-footer {
+    text-align: center !important;
+    margin-top: 18px !important;
+    font-size: 11.5px !important;
+    color: #555 !important;
+  }
+}
+
+/* ========================================================
+   TOAST & MOBILE BAR
+   ======================================================== */
+.toast-notice {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  background: var(--header-navy);
+  color: #FFFFFF;
+  padding: 12px 22px;
+  border-radius: var(--radius-pill);
+  font-size: 13.5px;
+  font-weight: 700;
+  z-index: 150;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  max-width: 90vw;
+  text-align: center;
+}
+.toast-notice.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.mobile-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 62px;
+  background: var(--surface);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 45;
+}
+.m-bar-btn {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+.m-bar-btn .m-icon { font-size: 19px; line-height: 1; }
+.m-bar-btn.active { color: var(--primary-teal); }
+.m-bar-btn.emerg { color: var(--emergency-coral); font-weight: 800; }
+
+@media (min-width: 768px) {
+  body { padding-bottom: 24px; }
+  .mobile-bottom-bar { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand" id="brandBtn">
+      <div class="brand-mark">
+        <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="10" fill="#0E7C86"/>
+          <rect x="17" y="8" width="6" height="24" rx="3" fill="#FFFFFF"/>
+          <rect x="8" y="17" width="24" height="6" rx="3" fill="#FFFFFF"/>
+          <path d="M10 20 L15.5 20 L18 13.5 L22 26.5 L24.5 17.5 L26 20 L30 20" stroke="#0B2A43" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="20" r="2.2" fill="#5EEAD4"/>
+        </svg>
+      </div>
+      <div class="brand-name">
+        <div class="brand-name-main">Care<span>Now</span> <span class="tricity-tag">Tricity</span></div>
+      </div>
+    </div>
+    <div class="header-right" id="headerRightArea"></div>
+  </div>
+</header>
+
+<!-- MAIN APP ROOT -->
+<main id="appContent"></main>
+
+<!-- MOBILE STICKY BOTTOM BAR -->
+<nav class="mobile-bottom-bar" id="mobileBottomBar">
+  <button class="m-bar-btn" id="mBtnHome">
+    <span class="m-icon">🏠</span>
+    <span>Home</span>
+  </button>
+  <button class="m-bar-btn active" id="mBtnSearch">
+    <span class="m-icon">🔍</span>
+    <span>OPD Radar</span>
+  </button>
+  <button class="m-bar-btn" id="mBtnNearMe">
+    <span class="m-icon">📍</span>
+    <span>Near Me</span>
+  </button>
+  <button class="m-bar-btn emerg" id="mBtnEmergency">
+    <span class="m-icon">⚡</span>
+    <span>Emergency</span>
+  </button>
+</nav>
+
+<!-- OPD SEQUENTIAL TOKEN GENERATOR MODAL -->
+<div class="backdrop" id="opdTokenModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="opdTokenTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h2 id="opdTokenTitle" style="color:var(--primary-teal);">🎫 Generate OPD Queue Slip</h2>
+        <p>Advance booking for today's routine doctor consultation counter.</p>
+      </div>
+      <button class="close-btn" id="closeOpdModalBtn" aria-label="Close">×</button>
+    </div>
+    <form id="opdTokenForm">
+      <div class="form-group">
+        <label for="selectOpdHospital">Select Hospital</label>
+        <select id="selectOpdHospital"></select>
+      </div>
+      <div class="form-group">
+        <label for="selectOpdDepartment">Clinical Department</label>
+        <select id="selectOpdDepartment">
+          <option value="MED">General Medicine (OPD-MED)</option>
+          <option value="ORTHO">Orthopedics & Joint Care (OPD-ORTHO)</option>
+          <option value="PED">Pediatrics & Child Care (OPD-PED)</option>
+          <option value="GYN">Gynecology & Obstetrics (OPD-GYN)</option>
+          <option value="CARDIO">Cardiology Consultation (OPD-CARDIO)</option>
+          <option value="ENT">ENT & Head-Neck (OPD-ENT)</option>
+          <option value="DENT">Dental Clinic (OPD-DENT)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="opdPatientName">Patient Name</label>
+        <input type="text" id="opdPatientName" placeholder="e.g. Ramesh Chand" required>
+      </div>
+      <div class="form-group">
+        <label for="opdPatientPhone">Mobile Number (For SMS & Ticket)</label>
+        <input type="tel" id="opdPatientPhone" placeholder="10-digit mobile number" required>
+      </div>
+      <button type="submit" class="btn-primary" style="margin-top:10px;">
+        Issue Sequential OPD Token & Print Slip
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- EMERGENCY TOKEN GENERATOR MODAL -->
+<div class="backdrop" id="tokenGeneratorBackdrop" role="dialog" aria-modal="true" aria-labelledby="tokenGenModalTitle">
+  <div class="modal-box" style="width:min(100%, 500px);">
+    <div class="modal-header">
+      <div>
+        <h2 id="tokenGenModalTitle" style="color:var(--emergency-coral);display:flex;align-items:center;gap:6px;">
+          <span>⚡</span> Issue Tricity Emergency Token
+        </h2>
+        <p>Pre-alert hospital casualty triage & reserve an urgent intake slot.</p>
+      </div>
+      <button class="close-btn" id="closeTokenGenModalBtn" aria-label="Close">×</button>
+    </div>
+    <form id="tokenGenForm">
+      <div class="form-group">
+        <label for="selectTokenHospital">Select 24x7 Emergency Facility</label>
+        <select id="selectTokenHospital"></select>
+      </div>
+
+      <div class="form-group">
+        <label>Triage Severity Level</label>
+        <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:8px;margin-top:6px;" id="triageSeverityGrid">
+          <div class="chip active" data-sev="p1" style="justify-content:center;cursor:pointer;">🔴 Priority 1</div>
+          <div class="chip" data-sev="p2" style="justify-content:center;cursor:pointer;">🟠 Priority 2</div>
+          <div class="chip" data-sev="p3" style="justify-content:center;cursor:pointer;">🟢 Priority 3</div>
+        </div>
+        <input type="hidden" id="selectedSeverityInput" value="p1">
+      </div>
+
+      <div class="form-group">
+        <label for="tokenPatientName">Patient Name & Mobile</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <input type="text" id="tokenPatientName" placeholder="Patient Name" required>
+          <input type="tel" id="tokenPatientPhone" placeholder="Mobile Number" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="tokenChiefComplaint">Chief Complaint / Symptoms</label>
+        <input type="text" id="tokenChiefComplaint" placeholder="e.g. Severe chest pain, breathlessness, accident" required>
+      </div>
+
+      <div class="form-group">
+        <label for="tokenEtaInput">Estimated Arrival Time</label>
+        <select id="tokenEtaInput">
+          <option value="Under 5 mins (Immediate / Near Gate)">Under 5 mins (Immediate / Near Gate)</option>
+          <option value="5–15 mins" selected>5–15 mins (In transit)</option>
+          <option value="15–30 mins">15–30 mins</option>
+          <option value="In Ambulance now">In Ambulance (En Route)</option>
+        </select>
+      </div>
+
+      <button type="submit" class="gw-btn gw-btn-token" style="margin-top:10px;">
+        <span>⚡ Transmit ER Token (Valid 24 Hours)</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- DIGITAL TOKEN PASS MODAL (WITH PRINT / PDF GENERATION) -->
+<div class="backdrop" id="tokenPassBackdrop" role="dialog" aria-modal="true" aria-labelledby="tokenPassTitle">
+  <div class="modal-box medical-pass-box" style="padding:0;max-height:92vh;">
+    <div class="pass-header">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:#7DD3FC;background:rgba(56,189,248,0.2);padding:3px 10px;border-radius:99px;" id="passTypeBadge">
+          OFFICIAL TRICITY SLIP
+        </span>
+        <button class="close-btn" id="closeTokenPassModalBtn" aria-label="Close" style="background:rgba(255,255,255,0.15);color:#FFFFFF;">×</button>
+      </div>
+      <div class="pass-token-display">
+        <div>
+          <div style="font-size:12px;color:#93C5FD;margin-bottom:2px;" id="passHeaderSub">Sequential Queue Token</div>
+          <div class="pass-token-code" id="passTokenCode">#001</div>
+        </div>
+        <div class="pass-barcode-sim">
+          <div class="bar-line" style="width:3px;height:28px;"></div>
+          <div class="bar-line" style="width:1.5px;height:24px;"></div>
+          <div class="bar-line" style="width:4px;height:30px;"></div>
+          <div class="bar-line" style="width:2px;height:20px;"></div>
+          <div class="bar-line" style="width:3.5px;height:26px;"></div>
+          <div class="bar-line" style="width:1px;height:22px;"></div>
+          <div class="bar-line" style="width:3px;height:29px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pass-body">
+      <div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--success-green);background:var(--success-green-bg);padding:4px 12px;border-radius:99px;margin-bottom:14px;">
+        <span class="hud-pulse-dot" style="background:#10B981;box-shadow:0 0 8px #10B981;"></span>
+        <span id="passStatusText">Registered in System · Token Active</span>
+      </div>
+
+      <div class="pass-info-grid">
+        <div>
+          <strong>Facility & Dept</strong>
+          <span id="passHospitalName" style="font-weight:800;color:var(--ink);">—</span>
+          <div id="passDeptLabel" style="font-size:11.5px;color:var(--muted);margin-top:2px;">—</div>
+        </div>
+        <div>
+          <strong>Live Queue Status</strong>
+          <span id="passServingNow" style="font-weight:800;color:var(--primary-teal);">Serving: #0</span>
+          <div id="passAheadCount" style="font-size:11.5px;color:var(--ink);margin-top:2px;font-weight:700;">2 Ahead of You</div>
+        </div>
+        <div>
+          <strong>Patient Name</strong>
+          <span id="passPatientName" style="font-weight:700;">—</span>
+        </div>
+        <div>
+          <strong>Booking Time / ETA</strong>
+          <span id="passTimeEta" style="font-weight:700;">—</span>
+        </div>
+        <div style="grid-column:1 / -1;">
+          <strong>Details / Complaint</strong>
+          <span id="passDetails" style="font-weight:600;color:var(--ink);">—</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons: Print PDF Slip & Download -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <button type="button" class="gw-btn" id="passPrintBtn" style="background:#0F172A;color:#FFFFFF;min-height:44px;font-size:13.5px;font-weight:800;">
+          🖨️ Print Slip / PDF
+        </button>
+        <button type="button" class="gw-btn" id="passDownloadFileBtn" style="background:var(--primary-teal);color:#FFFFFF;min-height:44px;font-size:13.5px;font-weight:800;">
+          📥 Download Slip (.html)
+        </button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <a href="#" id="passDirectionsBtn" target="_blank" rel="noopener noreferrer" class="gw-btn" style="background:var(--surface-alt);color:var(--ink);min-height:42px;font-size:13px;font-weight:700;">
+          🧭 GPS Route
+        </a>
+        <a href="#" id="passCallHospitalBtn" class="gw-btn" style="background:var(--surface-alt);color:var(--ink);min-height:42px;font-size:13px;font-weight:700;">
+          📞 Call Hospital
+        </a>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="btn-hdr" id="passDischargeBtn" style="flex:1;justify-content:center;min-height:40px;background:var(--surface-alt);color:var(--danger-red);font-weight:700;">
+          ✕ Close / Cancel Token
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REPORT QUEUE MODAL -->
+<div class="backdrop" id="reportBackdrop" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h2 id="reportModalTitle">Report live queue</h2>
+        <p>Help fellow Tricity patients know current wait times.</p>
+      </div>
+      <button class="close-btn" id="closeReportModalBtn" aria-label="Close">×</button>
+    </div>
+    <form id="reportForm">
+      <div class="form-group">
+        <label for="selectPlaceToReport">Healthcare Facility</label>
+        <select id="selectPlaceToReport"></select>
+      </div>
+      <div class="form-group">
+        <label for="queueNumberInput">Approximate People Waiting</label>
+        <select id="queueNumberInput">
+          <option value="0">No queue (0 people)</option>
+          <option value="5">1–5 people</option>
+          <option value="15">6–15 people</option>
+          <option value="30">16–30 people</option>
+          <option value="45">30+ people (Peak Rush)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="lineSpeedInput">Queue Moving Speed</label>
+        <select id="lineSpeedInput">
+          <option value="fast">Moving quickly</option>
+          <option value="normal" selected>Moving normally</option>
+          <option value="slow">Moving slowly</option>
+          <option value="stopped">OPD counter break / Pause</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary" style="margin-top:8px;">Submit Report (24h Expiry Logged)</button>
+    </form>
+  </div>
+</div>
+
+<!-- REPORT FALSE CLAIM MODAL -->
+<div class="backdrop" id="falseClaimBackdrop" role="dialog" aria-modal="true" aria-labelledby="falseClaimModalTitle">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h2 id="falseClaimModalTitle">Report false claim data</h2>
+        <p>Flag wait times, fees, timings, or unlisted charges in Tricity facilities.</p>
+      </div>
+      <button class="close-btn" id="closeFalseClaimModalBtn" aria-label="Close">×</button>
+    </div>
+    <form id="falseClaimForm">
+      <div class="form-group">
+        <label for="selectPlaceToFlag">Healthcare Facility</label>
+        <select id="selectPlaceToFlag"></select>
+      </div>
+      <div class="form-group">
+        <label for="falseClaimDetails">Describe the incorrect data</label>
+        <textarea id="falseClaimDetails" maxlength="240" placeholder="e.g. Listed fee is ₹10 OPD slip but counter demanded extra" required></textarea>
+      </div>
+      <button type="submit" class="btn-primary" style="margin-top:8px;">Submit False-Claim Report</button>
+    </form>
+  </div>
+</div>
+
+<!-- HIDDEN PRINTABLE CONTAINER FOR PDF PRINT SLIP -->
+<div id="printableTokenSlip">
+  <div class="print-ticket-box">
+    <div class="print-header">
+      <h2 style="margin:0 0 4px;font-size:22px;">CareNow Health — Chandigarh Tricity</h2>
+      <div style="font-size:12px;color:#444;" id="ptHospitalName">PGIMER Sector 12, Chandigarh</div>
+      <div style="font-size:11px;color:#666;" id="ptDeptName">Clinical Department: General Medicine</div>
+    </div>
+
+    <div style="text-align:center;font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;">
+      Official Queue Token Slip
+    </div>
+    <div class="print-token-num" id="ptTokenCode">#001</div>
+
+    <div class="print-field-row">
+      <span>Patient Name:</span>
+      <strong id="ptPatientName">—</strong>
+    </div>
+    <div class="print-field-row">
+      <span>Contact Mobile:</span>
+      <strong id="ptPatientPhone">—</strong>
+    </div>
+    <div class="print-field-row">
+      <span>Issued Timestamp:</span>
+      <strong id="ptTimestamp">—</strong>
+    </div>
+    <div class="print-field-row">
+      <span>Est. Arrival / Slot:</span>
+      <strong id="ptArrivalEta">—</strong>
+    </div>
+    <div class="print-field-row">
+      <span>Reason / Complaint:</span>
+      <strong id="ptComplaint">—</strong>
+    </div>
+
+    <div class="print-footer">
+      <div>⚠️ Please present this digital slip at Counter 1 / Casualty reception upon arrival.</div>
+      <div style="margin-top:4px;">Emergency Helpline: 108 · Police/Ambulance: 112</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-notice" id="appToast"></div>
+
+<script>
+// ========================================================
+// 1. SUPABASE DATABASE & REAL-TIME INTEGRATION
+// ========================================================
+const SUPABASE_URL = "https://xhpeqweuwhqvbjeptzzb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhocGVxd2V1d2hxdmJqZXB0enpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NTI0MjAsImV4cCI6MjEwODMyODQyMH0.oSQYVZzonp2fySnLWI7Gt3x4qVRy9P6nKUoTEUllffY";
+
+let sb = null;
+let isSupabaseConnected = false;
+
+try {
+  if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+    const { createClient } = window.supabase;
+    sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    isSupabaseConnected = true;
+    console.log("[Supabase] Connected to Chandigarh Tricity database.");
+  }
+} catch (err) {
+  console.warn("[Supabase] Running with local fallback:", err.message);
+  sb = null;
+}
+
+// Automatic Visitor Logging
+async function logVisitor(pageName) {
+  if (!sb) return;
+  try {
+    let visitorName = localStorage.getItem("carenow_visitor_name");
+    if (!visitorName) {
+      visitorName = "Visitor-" + Math.floor(1000 + Math.random() * 9000);
+      localStorage.setItem("carenow_visitor_name", visitorName);
+    }
+    await sb.from("visitor_logs").insert([
+      { visitor_name: visitorName, page_visited: pageName, created_at: new Date().toISOString() }
+    ]);
+  } catch (err) {
+    // Non-blocking visitor log
+  }
+}
+
+// 24-Hour Expiry Window: 86,400,000 milliseconds
+const EXPIRY_24_HOURS_MS = 86400000;
+
+function isOlderThan24Hours(isoTimestamp) {
+  if (!isoTimestamp) return true;
+  const time = new Date(isoTimestamp).getTime();
+  if (isNaN(time)) return true;
+  return (Date.now() - time) > EXPIRY_24_HOURS_MS;
+}
+
+function cleanStale24HourData() {
+  const now = Date.now();
+  let cleaned = 0;
+
+  falseClaims = falseClaims.filter(fc => {
+    const age = now - new Date(fc.createdAt || fc.created_at || 0).getTime();
+    return age < EXPIRY_24_HOURS_MS;
+  });
+  saveFalseClaims();
+
+  if (activeEmergencyToken) {
+    const tokenAge = now - new Date(activeEmergencyToken.createdAt || 0).getTime();
+    if (tokenAge >= EXPIRY_24_HOURS_MS) {
+      saveActiveEmergencyToken(null);
+      cleaned++;
+    }
+  }
+
+  places.forEach(p => {
+    if (p.reportTimestamp && isOlderThan24Hours(p.reportTimestamp)) {
+      const base = tricityInitialPlaces.find(x => x.id === p.id);
+      if (base) {
+        p.people = base.people;
+        p.speed = "normal";
+        p.lastVerified = 45;
+        delete p.reportTimestamp;
+        cleaned++;
+      }
+    }
+  });
+
+  if (cleaned > 0) savePlaces();
+}
+
+// ========================================================
+// 2. EXPANDED CHANDIGARH TRICITY DATASET (WITH EXACT GPS)
+// ========================================================
+const tricityInitialPlaces = [
+  // Govt Hospitals
+  {
+    id: 1,
+    name: "PGIMER (Postgraduate Institute)",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Sector 12, Chandigarh",
+    lat: 30.7673,
+    lng: 76.7774,
+    is24x7: true,
+    timings: "24x7 Emergency Trauma",
+    fee: "Free / ₹10 OPD slip",
+    minFee: 0,
+    people: 45,
+    rate: 1.5,
+    servingToken: 42,
+    phone: "0172-2756565",
+    lastVerified: 5,
+    doctors: [
+      { name: "Dr. Arvind Singla", speciality: "General Physician", fee: 0, days: "Mon–Sat", hours: "8:00 AM – 2:00 PM" },
+      { name: "Dr. Manpreet Singh", speciality: "Orthopedics", fee: 0, days: "All days", hours: "24x7 Emergency Trauma" },
+      { name: "Dr. Neha Dhillon", speciality: "Pediatrics", fee: 10, days: "Mon–Fri", hours: "9:00 AM – 1:00 PM" }
+    ]
+  },
+  {
+    id: 2,
+    name: "GMCH-32 (Govt. Medical College & Hospital)",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Sector 32, Chandigarh",
+    lat: 30.7090,
+    lng: 76.7766,
+    is24x7: true,
+    timings: "24x7 Emergency",
+    fee: "Free / ₹10 OPD slip",
+    minFee: 0,
+    people: 32,
+    rate: 1.4,
+    servingToken: 28,
+    phone: "0172-2663301",
+    lastVerified: 10,
+    doctors: [
+      { name: "Dr. Raman Bansal", speciality: "General Physician", fee: 0, days: "All days", hours: "24x7 Casualty" },
+      { name: "Dr. Harpreet Cheema", speciality: "ENT", fee: 10, days: "Mon–Fri", hours: "9:00 AM – 2:00 PM" }
+    ]
+  },
+  {
+    id: 3,
+    name: "GMSH-16 (Govt. Multi-Specialty Hospital)",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Sector 16, Chandigarh",
+    lat: 30.7483,
+    lng: 76.7820,
+    is24x7: true,
+    timings: "24x7 Emergency",
+    fee: "Free / ₹10 OPD slip",
+    minFee: 0,
+    people: 25,
+    rate: 1.3,
+    servingToken: 19,
+    phone: "0172-2752042",
+    lastVerified: 8,
+    doctors: [
+      { name: "Dr. Shalini Sood", speciality: "Gynecology", fee: 0, days: "Mon–Sat", hours: "8:00 AM – 2:00 PM" },
+      { name: "Dr. Vikramjeet Gill", speciality: "General Physician", fee: 10, days: "All days", hours: "24x7 Emergency" }
+    ]
+  },
+  {
+    id: 4,
+    name: "Civil Hospital Sector 22",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Sector 22, Chandigarh",
+    lat: 30.7290,
+    lng: 76.7680,
+    is24x7: true,
+    timings: "24x7 Open",
+    fee: "Free / ₹10 OPD slip",
+    minFee: 0,
+    people: 18,
+    rate: 1.2,
+    servingToken: 14,
+    phone: "9914147220",
+    lastVerified: 15,
+    doctors: [
+      { name: "Dr. Gurleen Sandhu", speciality: "General Physician", fee: 0, days: "Mon–Sat", hours: "8:00 AM – 2:00 PM" }
+    ]
+  },
+  {
+    id: 5,
+    name: "Civil Hospital Sector 45",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Sector 45, Chandigarh",
+    lat: 30.7050,
+    lng: 76.7620,
+    is24x7: true,
+    timings: "24x7 Open",
+    fee: "Free / ₹10 OPD slip",
+    minFee: 0,
+    people: 12,
+    rate: 1.2,
+    servingToken: 9,
+    phone: "9815951822",
+    lastVerified: 20,
+    doctors: [
+      { name: "Dr. Sunita Bajaj", speciality: "Pediatrics", fee: 0, days: "Mon–Sat", hours: "9:00 AM – 1:00 PM" }
+    ]
+  },
+  {
+    id: 6,
+    name: "Civil Hospital Manimajra",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Manimajra, Chandigarh",
+    lat: 30.7240,
+    lng: 76.8450,
+    is24x7: true,
+    timings: "24x7 Open",
+    fee: "Free / ₹10 OPD slip",
+    minFee: 0,
+    people: 15,
+    rate: 1.2,
+    servingToken: 11,
+    phone: "8146500201",
+    lastVerified: 25,
+    doctors: [
+      { name: "Dr. Ankur Walia", speciality: "General Physician", fee: 0, days: "Mon–Sat", hours: "8:30 AM – 2:30 PM" }
+    ]
+  },
+  {
+    id: 7,
+    name: "AIMS Mohali (Dr. B.R. Ambedkar Institute)",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Phase 6, Mohali",
+    lat: 30.7258,
+    lng: 76.7118,
+    is24x7: true,
+    timings: "24x7 Open",
+    fee: "Free / Govt Norms",
+    minFee: 0,
+    people: 22,
+    rate: 1.3,
+    servingToken: 17,
+    phone: "0172-2923002",
+    lastVerified: 14,
+    doctors: [
+      { name: "Dr. Jaspreet Ahluwalia", speciality: "Orthopedics", fee: 0, days: "All days", hours: "24x7 Emergency" }
+    ]
+  },
+  {
+    id: 8,
+    name: "General Hospital Panchkula",
+    cat: "govt_hospital",
+    categoryLabel: "Govt Hospital",
+    area: "Sector 6, Panchkula",
+    lat: 30.6975,
+    lng: 76.8580,
+    is24x7: true,
+    timings: "24x7 Open",
+    fee: "Free / ₹10 OPD slip",
+    minFee: 0,
+    people: 20,
+    rate: 1.3,
+    servingToken: 15,
+    phone: "0172-2562199",
+    lastVerified: 12,
+    doctors: [
+      { name: "Dr. Rajesh Mittal", speciality: "General Physician", fee: 10, days: "Mon–Sat", hours: "8:00 AM – 2:00 PM" }
+    ]
+  },
+
+  // Leading Private Hospitals
+  {
+    id: 9,
+    name: "Fortis Hospital Mohali",
+    cat: "pvt_hospital",
+    categoryLabel: "Private Hospital",
+    area: "Phase 8, Mohali",
+    lat: 30.7056,
+    lng: 76.7328,
+    is24x7: true,
+    timings: "24x7 Emergency & Trauma",
+    fee: "₹800 - ₹1200",
+    minFee: 800,
+    people: 14,
+    rate: 1.2,
+    servingToken: 24,
+    phone: "0172-5096000",
+    lastVerified: 3,
+    doctors: [
+      { name: "Dr. Puneet Verma", speciality: "Cardiology", fee: 1000, days: "Mon–Sat", hours: "10:00 AM – 4:00 PM" },
+      { name: "Dr. Simran Randhawa", speciality: "Pediatrics", fee: 850, days: "Mon–Sat", hours: "9:00 AM – 5:00 PM" }
+    ]
+  },
+  {
+    id: 10,
+    name: "Max Super Speciality Hospital",
+    cat: "pvt_hospital",
+    categoryLabel: "Private Hospital",
+    area: "Phase 6, Mohali",
+    lat: 30.7289,
+    lng: 76.7115,
+    is24x7: true,
+    timings: "24x7 Open",
+    fee: "₹850 - ₹1500",
+    minFee: 850,
+    people: 16,
+    rate: 1.1,
+    servingToken: 31,
+    phone: "0172-6652000",
+    lastVerified: 6,
+    doctors: [
+      { name: "Dr. Ajay Kaul", speciality: "Cardiology", fee: 1200, days: "Mon–Sat", hours: "9:00 AM – 5:00 PM" }
+    ]
+  },
+  {
+    id: 11,
+    name: "Alchemist Hospital Panchkula",
+    cat: "pvt_hospital",
+    categoryLabel: "Private Hospital",
+    area: "Sector 21, Panchkula",
+    lat: 30.6728,
+    lng: 76.8550,
+    is24x7: true,
+    timings: "24x7 Emergency ICU",
+    fee: "₹700 - ₹1200",
+    minFee: 700,
+    people: 11,
+    rate: 1.2,
+    servingToken: 18,
+    phone: "0172-4500000",
+    lastVerified: 4,
+    doctors: [
+      { name: "Dr. Rajiv Singhal", speciality: "Orthopedics", fee: 800, days: "Mon–Sat", hours: "9:30 AM – 3:30 PM" }
+    ]
+  },
+  {
+    id: 12,
+    name: "Ivy Hospital Mohali",
+    cat: "pvt_hospital",
+    categoryLabel: "Private Hospital",
+    area: "Sector 71, Mohali",
+    lat: 30.7042,
+    lng: 76.7020,
+    is24x7: true,
+    timings: "24x7 Emergency",
+    fee: "₹600 - ₹1100",
+    minFee: 600,
+    people: 13,
+    rate: 1.1,
+    servingToken: 21,
+    phone: "0172-7170000",
+    lastVerified: 7,
+    doctors: [
+      { name: "Dr. Kanwaldeep Gill", speciality: "General Medicine", fee: 650, days: "Mon–Sat", hours: "10:00 AM – 4:00 PM" }
+    ]
+  },
+  {
+    id: 13,
+    name: "Healing Hospital Sector 34",
+    cat: "pvt_hospital",
+    categoryLabel: "Private Hospital",
+    area: "Sector 34-A, Chandigarh",
+    lat: 30.7180,
+    lng: 76.7675,
+    is24x7: true,
+    timings: "24x7 Open",
+    fee: "₹500 - ₹900",
+    minFee: 500,
+    people: 9,
+    rate: 1.2,
+    servingToken: 12,
+    phone: "0172-5002000",
+    lastVerified: 5,
+    doctors: [
+      { name: "Dr. Sahibjit Bindra", speciality: "Orthopedics", fee: 600, days: "Mon–Sat", hours: "9:00 AM – 5:00 PM" }
+    ]
+  },
+
+  // Wellness & Civil Dispensaries
+  {
+    id: 14,
+    name: "CGHS Wellness Centre",
+    cat: "clinic",
+    categoryLabel: "Wellness Centre",
+    area: "Sector 45-C, Chandigarh",
+    lat: 30.7080,
+    lng: 76.7640,
+    is24x7: false,
+    timings: "8:00 AM – 2:00 PM",
+    fee: "Government Scheme",
+    minFee: 0,
+    people: 4,
+    rate: 1.0,
+    servingToken: 7,
+    phone: "0172-2925160",
+    lastVerified: 20,
+    doctors: [
+      { name: "Dr. Swati Arora", speciality: "General Physician", fee: 0, days: "Mon–Sat", hours: "8:00 AM – 2:00 PM" }
+    ]
+  },
+  {
+    id: 15,
+    name: "Civil Dispensary Sector 19A",
+    cat: "clinic",
+    categoryLabel: "Civil Dispensary",
+    area: "Sector 19A, Chandigarh",
+    lat: 30.7380,
+    lng: 76.7890,
+    is24x7: false,
+    timings: "9:00 AM – 4:00 PM",
+    fee: "Free OPD",
+    minFee: 0,
+    people: 6,
+    rate: 1.0,
+    servingToken: 8,
+    phone: "0172-2700019",
+    lastVerified: 30,
+    doctors: [
+      { name: "Dr. Monica Paul", speciality: "General Physician", fee: 0, days: "Mon–Sat", hours: "9:00 AM – 4:00 PM" }
+    ]
+  }
+];
+
+// LocalStorage Keys
+const STORAGE_PLACES = "carenow_tricity_places_v5";
+const STORAGE_FALSE_CLAIMS = "carenow_tricity_false_claims_v5";
+const STORAGE_EMERGENCY_TOKEN = "carenow_tricity_active_token_v5";
+const STORAGE_MODE = "carenow_tricity_mode_v5";
+
+let places = JSON.parse(localStorage.getItem(STORAGE_PLACES) || "null");
+if (!places || !Array.isArray(places) || places.length < tricityInitialPlaces.length) {
+  places = JSON.parse(JSON.stringify(tricityInitialPlaces));
+  localStorage.setItem(STORAGE_PLACES, JSON.stringify(places));
+}
+
+let falseClaims = JSON.parse(localStorage.getItem(STORAGE_FALSE_CLAIMS) || "[]");
+let activeEmergencyToken = JSON.parse(localStorage.getItem(STORAGE_EMERGENCY_TOKEN) || "null");
+let currentMode = localStorage.getItem(STORAGE_MODE) || "gateway";
+
+function savePlaces() {
+  localStorage.setItem(STORAGE_PLACES, JSON.stringify(places));
+}
+
+function saveFalseClaims() {
+  localStorage.setItem(STORAGE_FALSE_CLAIMS, JSON.stringify(falseClaims));
+}
+
+function saveActiveEmergencyToken(token) {
+  activeEmergencyToken = token;
+  if (token) localStorage.setItem(STORAGE_EMERGENCY_TOKEN, JSON.stringify(token));
+  else localStorage.removeItem(STORAGE_EMERGENCY_TOKEN);
+}
+
+function getFalseClaimCount(placeId) {
+  return falseClaims.filter(r => r.placeId === placeId).length;
+}
+
+// ========================================================
+// 3. HAVERSINE FORMULA (10 KM NEAREST HOSPITAL FINDER)
+// ========================================================
+let userGeoLocation = null;
+let filterWithin10Km = false;
+
+function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return parseFloat((R * c).toFixed(1));
+}
+
+function trigger10KmNearMe() {
+  if (!navigator.geolocation) {
+    showToast("Geolocation is not supported by your browser.");
+    return;
+  }
+  showToast("Detecting your Tricity GPS coordinates...");
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      userGeoLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+      // Calculate distances
+      places.forEach(p => {
+        p.distanceKm = calculateDistanceKm(userGeoLocation.lat, userGeoLocation.lng, p.lat, p.lng);
+      });
+      filterWithin10Km = true;
+      currentMode = "simple";
+      savePlaces();
+      render();
+      showToast("Filtered: Hospitals within 10 km of your live location!");
+    },
+    error => {
+      console.warn("GPS error:", error);
+      // Fallback coordinate: Sector 17 City Centre, Chandigarh
+      userGeoLocation = { lat: 30.7333, lng: 76.7794 };
+      places.forEach(p => {
+        p.distanceKm = calculateDistanceKm(userGeoLocation.lat, userGeoLocation.lng, p.lat, p.lng);
+      });
+      filterWithin10Km = true;
+      currentMode = "simple";
+      savePlaces();
+      render();
+      showToast("GPS access denied. Using Chandigarh Sector 17 centre (within 10 km).");
+    },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+
+// ========================================================
+// 4. UI STATE & ROBUST REAL-TIME SEARCH
+// ========================================================
+let activeCategory = "all";
+let searchQuery = "";
+let activeQuickChip = "";
+let sortOption = "wait";
+
+const el = id => document.getElementById(id);
+
+function getWaitTime(p) {
+  if (p.speed === "stopped") return null;
+  const r = (p.rate || 1.3) * (p.speed === "fast" ? 1.35 : p.speed === "slow" ? 0.65 : 1);
+  return Math.max(0, Math.round(p.people / r));
+}
+
+function getWaitColorClass(w) {
+  if (w === null) return "gray";
+  if (w < 15) return "green";
+  if (w <= 30) return "amber";
+  return "coral";
+}
+
+function escapeHtml(str) {
+  return String(str || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function showToast(msg) {
+  const t = el("appToast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3500);
+}
+
+function getMapsDirectionsUrl(name, area) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + area)}`;
+}
+
+// ========================================================
+// 5. VIEW RENDERING CONTROLLER
+// ========================================================
+function render() {
+  cleanStale24HourData();
+  renderHeader();
+
+  const content = el("appContent");
+  if (currentMode === "emergency") {
+    renderEmergencyView(content);
+  } else if (currentMode === "gateway") {
+    renderGatewayView(content);
+  } else {
+    renderSimpleView(content);
+  }
+
+  // Update mobile bottom bar active state
+  if (el("mBtnHome")) el("mBtnHome").classList.toggle("active", currentMode === "gateway");
+  if (el("mBtnSearch")) el("mBtnSearch").classList.toggle("active", currentMode === "simple" && !filterWithin10Km);
+  if (el("mBtnNearMe")) el("mBtnNearMe").classList.toggle("active", filterWithin10Km);
+  if (el("mBtnEmergency")) el("mBtnEmergency").classList.toggle("active", currentMode === "emergency");
+
+  logVisitor(currentMode === "gateway" ? "Home Gateway" : currentMode === "emergency" ? "24x7 Emergency" : "OPD Radar");
+}
+
+function renderHeader() {
+  const container = el("headerRightArea");
+  const syncHtml = `<div class="cloud-sync-pill"><span class="cloud-dot"></span> ${isSupabaseConnected ? "Live Sync" : "Local Sync"}</div>`;
+
+  if (currentMode === "gateway") {
+    container.innerHTML = `
+      ${syncHtml}
+      <button class="btn-hdr" id="hdrSimpleBtn">OPD Radar</button>
+      <button class="btn-hdr btn-hdr-emerg" id="hdrEmergBtn">⚡ Emergency</button>
+    `;
+  } else if (currentMode === "emergency") {
+    container.innerHTML = `
+      ${syncHtml}
+      <button class="btn-hdr" id="hdrHomeBtn">🏠 Home</button>
+      <button class="btn-hdr" id="hdrSimpleBtn">← OPD Radar</button>
+      <button class="btn-hdr btn-hdr-emerg" id="hdrTokenBtn">🎫 ER Token</button>
+    `;
+  } else {
+    container.innerHTML = `
+      ${syncHtml}
+      <button class="btn-hdr" id="hdrHomeBtn">🏠 Home</button>
+      <button class="btn-hdr btn-hdr-emerg" id="switchModeBtn">⚡ Emergency</button>
+      <button class="btn-hdr" id="headerOpdBtn">🎫 New Slip</button>
+    `;
+  }
+
+  if (el("hdrHomeBtn")) el("hdrHomeBtn").onclick = () => setMode("gateway");
+  if (el("hdrSimpleBtn")) el("hdrSimpleBtn").onclick = () => { filterWithin10Km = false; setMode("simple"); };
+  if (el("hdrEmergBtn")) el("hdrEmergBtn").onclick = () => setMode("emergency");
+  if (el("switchModeBtn")) el("switchModeBtn").onclick = () => setMode("emergency");
+  if (el("headerOpdBtn")) el("headerOpdBtn").onclick = () => openOpdModal(places[0].id);
+  if (el("hdrTokenBtn")) el("hdrTokenBtn").onclick = () => activeEmergencyToken ? openTokenPassModal() : openTokenGeneratorModal();
+
+  el("brandBtn").onclick = () => { filterWithin10Km = false; setMode("gateway"); };
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  localStorage.setItem(STORAGE_MODE, mode);
+  render();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// --- GATEWAY VIEW ---
+function renderGatewayView(container) {
+  container.innerHTML = `
+    <div class="gateway-screen">
+      <div class="wrap" style="max-width:960px;">
+        ${renderActiveTokenHUDHTML()}
+
+        <div class="gateway-hero">
+          <div class="gateway-badge">
+            <span class="pulse-beacon"></span> CHANDIGARH TRICITY HEALTHCARE RADAR
+          </div>
+          <h1 class="gateway-title">CareNow Health — Chandigarh Tricity</h1>
+          <p class="gateway-sub">
+            Live queue tracker, sequential token slips, and 10 km GPS nearest hospital finder for Chandigarh, Mohali & Panchkula. Check OPD rush across PGIMER, GMCH-32, Fortis, Max, and civil dispensaries.
+          </p>
+        </div>
+
+        <div class="gateway-grid">
+          <!-- Routine OPD -->
+          <div class="gateway-card simple">
+            <div>
+              <div class="gw-card-top">
+                <div class="gw-badge-pill simple">Routine OPD Queues</div>
+                <span style="font-weight:800;color:var(--primary-teal);">→</span>
+              </div>
+              <div class="gw-icon-circle simple">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <h2>OPD Queues & Sequential Slips</h2>
+              <p class="gw-desc">Check real-time counter rush and download printable sequential registration slips for PGIMER, GMCH, and leading hospitals.</p>
+              <ul class="gw-feature-list">
+                <li><span class="gw-chk simple">✓</span><span><strong>Sequential Token Slips:</strong> #1, #2, #3 advancing order with print feature</span></li>
+                <li><span class="gw-chk simple">✓</span><span><strong>Live Ongoing Token Tracking:</strong> See counter "Serving #42" in real time</span></li>
+                <li><span class="gw-chk simple">✓</span><span><strong>Near Me (10 km):</strong> Haversine GPS proximity sorting</span></li>
+              </ul>
+            </div>
+            <div>
+              <button class="gw-btn gw-btn-simple" onclick="setMode('simple')">Explore Tricity OPD Radar →</button>
+              <button class="gw-btn gw-btn-emerg-secondary" onclick="trigger10KmNearMe()" style="margin-top:8px;">📍 Find Nearest Hospitals (&lt; 10 km)</button>
+            </div>
+          </div>
+
+          <!-- Emergency Priority -->
+          <div class="gateway-card emergency">
+            <div>
+              <div class="gw-card-top">
+                <div class="gw-badge-pill emergency">24x7 Priority</div>
+                <span style="font-weight:800;color:var(--emergency-coral);">⚡</span>
+              </div>
+              <div class="gw-icon-circle emergency">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 2a2 2 0 0 0-2 2v5H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h5v5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-5h5a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-5V4a2 2 0 0 0-2-2h-2z"/></svg>
+              </div>
+              <h2>Emergency Casualty Triage</h2>
+              <p class="gw-desc">Issue pre-alert emergency triage passes to trauma centers across Chandigarh, Mohali, and Panchkula with printable PDF documentation.</p>
+              <ul class="gw-feature-list">
+                <li><span class="gw-chk emergency">★</span><span><strong>Instant ER Token:</strong> Priority 1 (Trauma) to Priority 3 passes</span></li>
+                <li><span class="gw-chk emergency">★</span><span><strong>24x7 Trauma Beds:</strong> PGIMER, GMCH-32, Fortis, Max, AIMS Mohali</span></li>
+                <li><span class="gw-chk emergency">★</span><span><strong>1-Tap SOS Dispatch:</strong> 108 Ambulance & 112 Unified</span></li>
+              </ul>
+            </div>
+            <div>
+              <button class="gw-btn gw-btn-token" onclick="openTokenGeneratorModal()">🎟️ Take Tricity Emergency Token</button>
+              <button class="gw-btn gw-btn-emerg-secondary" onclick="setMode('emergency')">View 24x7 Hospitals →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SOS Quick Strip -->
+        <div class="gateway-sos-strip">
+          <div class="gw-sos-heading">
+            <span style="color:var(--danger-red);">●</span>
+            <span>Tricity Direct Emergency Hotlines (Toll-Free & Zero Cost)</span>
+          </div>
+          <div class="gw-sos-grid">
+            <a href="tel:108" class="gw-sos-item red">
+              <span style="font-size:24px;">🚑</span>
+              <div><strong>108 Ambulance</strong><small>Chandigarh / Punjab / HR</small></div>
+            </a>
+            <a href="tel:112" class="gw-sos-item blue">
+              <span style="font-size:24px;">🛡️</span>
+              <div><strong>112 National</strong><small>Unified Emergency SOS</small></div>
+            </a>
+            <a href="tel:0172-2756565" class="gw-sos-item green">
+              <span style="font-size:24px;">🏥</span>
+              <div><strong>PGIMER Emergency</strong><small>0172-2756565</small></div>
+            </a>
+            <a href="tel:0172-2663301" class="gw-sos-item amber">
+              <span style="font-size:24px;">🩺</span>
+              <div><strong>GMCH-32 Casualty</strong><small>0172-2663301</small></div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// --- SIMPLE OPD RADAR VIEW (WITH LIVE SEARCH & 10KM FILTER) ---
+function renderSimpleView(container) {
+  // Robust search filtering across names, departments, doctors, areas, and public/private types
+  let filtered = places.filter(p => {
+    if (activeCategory !== "all" && p.cat !== activeCategory) return false;
+
+    // 10 km Radius filter
+    if (filterWithin10Km) {
+      if (typeof p.distanceKm === "number" && p.distanceKm > 10) return false;
+    }
+
+    if (activeQuickChip === "Free") {
+      if (p.minFee !== 0) return false;
+    } else if (activeQuickChip === "24x7") {
+      if (!p.is24x7) return false;
+    } else if (activeQuickChip === "Chandigarh") {
+      if (!p.area.toLowerCase().includes("chandigarh")) return false;
+    } else if (activeQuickChip === "Mohali") {
+      if (!p.area.toLowerCase().includes("mohali")) return false;
+    } else if (activeQuickChip === "Panchkula") {
+      if (!p.area.toLowerCase().includes("panchkula")) return false;
+    }
+
+    // Bug-free, case-insensitive keyword search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const docsText = (p.doctors || []).map(d => `${d.name} ${d.speciality}`).join(" ").toLowerCase();
+      const fullText = `${p.name} ${p.area} ${p.fee} ${p.categoryLabel} ${docsText}`.toLowerCase();
+      if (!fullText.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sorting: If distance is active, prioritize nearest; otherwise wait time
+  if (filterWithin10Km) {
+    filtered.sort((a, b) => (a.distanceKm ?? 99) - (b.distanceKm ?? 99));
+  } else {
+    filtered.sort((a, b) => (getWaitTime(a) ?? 999) - (getWaitTime(b) ?? 999));
+  }
+
+  const count247 = places.filter(p => p.is24x7).length;
+  const avgWait = Math.round(places.reduce((acc, p) => acc + (getWaitTime(p) || 0), 0) / places.length);
+
+  container.innerHTML = `
+    <div class="stats-strip">
+      <div class="wrap stats-grid">
+        <div class="stat-pill"><span class="stat-dot-green"></span> <span>Tricity Hospitals: <strong>${places.length}</strong></span></div>
+        <div class="stat-pill"><span>⚡ 24x7 Emergency Centers: <strong>${count247}</strong></span></div>
+        <div class="stat-pill"><span>⏱ Avg Wait Time: <strong>${avgWait} mins</strong></span></div>
+        <div class="stat-pill"><span>🎫 Live Supabase Sync: <strong>Active</strong></span></div>
+      </div>
+    </div>
+
+    <div class="wrap">
+      ${renderActiveTokenHUDHTML()}
+
+      <!-- SEARCH BAR (SMOOTH & BUG-FREE) -->
+      <div class="search-block">
+        <div class="search-input-wrap">
+          <span class="search-ico">🔍</span>
+          <input type="text" id="mainSearchInput" placeholder="Search PGIMER, GMCH, Fortis, Max, Sector 16, Panchkula, Orthopedics, Dr. name..." value="${escapeHtml(searchQuery)}" autocomplete="off">
+          ${searchQuery ? `<button class="clear-btn" id="clearSearchBtn">×</button>` : ""}
+        </div>
+      </div>
+
+      <!-- QUICK CHIPS ROW WITH 10 KM TOGGLE -->
+      <div class="quick-chips-row">
+        <button class="chip ${filterWithin10Km ? "geo-active" : ""}" id="chipNearMeToggle">
+          📍 Near Me (&lt; 10 km) ${filterWithin10Km ? "✓" : ""}
+        </button>
+        <button class="chip ${activeQuickChip === "Chandigarh" ? "active" : ""}" onclick="setQuickChip('Chandigarh')">Chandigarh</button>
+        <button class="chip ${activeQuickChip === "Mohali" ? "active" : ""}" onclick="setQuickChip('Mohali')">Mohali</button>
+        <button class="chip ${activeQuickChip === "Panchkula" ? "active" : ""}" onclick="setQuickChip('Panchkula')">Panchkula</button>
+        <button class="chip ${activeQuickChip === "Free" ? "active" : ""}" onclick="setQuickChip('Free')">Free / ₹10 OPD</button>
+        <button class="chip ${activeQuickChip === "24x7" ? "active" : ""}" onclick="setQuickChip('24x7')">⚡ 24x7 Open</button>
+      </div>
+
+      <!-- CATEGORY TABS -->
+      <div class="filter-bar">
+        <div class="filter-top-row">
+          <div class="category-tabs">
+            <button class="cat-tab ${activeCategory === "all" ? "active" : ""}" onclick="activeCategory='all';render();">All (${places.length})</button>
+            <button class="cat-tab ${activeCategory === "govt_hospital" ? "active" : ""}" onclick="activeCategory='govt_hospital';render();">Government Hospitals</button>
+            <button class="cat-tab ${activeCategory === "pvt_hospital" ? "active" : ""}" onclick="activeCategory='pvt_hospital';render();">Private Hospitals</button>
+            <button class="cat-tab ${activeCategory === "clinic" ? "active" : ""}" onclick="activeCategory='clinic';render();">Wellness & Dispensaries</button>
+          </div>
+          <div style="font-size:12.5px;color:var(--muted);font-weight:700;">
+            ${filterWithin10Km ? "📍 Radius Filter: Within 10 km" : "Showing all Tricity"}
+          </div>
+        </div>
+      </div>
+
+      <div class="results-meta">
+        <div>Showing <b>${filtered.length}</b> verified facilities</div>
+        <div>Real-time token numbers active</div>
+      </div>
+
+      <!-- CARDS LIST -->
+      <div class="cards-list">
+        ${filtered.length > 0 ? filtered.map(p => {
+          const w = getWaitTime(p);
+          const hasDocs = p.doctors && p.doctors.length > 0;
+          return `
+            <article class="place-card cat-${p.cat}">
+              <div class="badge-row">
+                <span class="cat-badge ${p.cat}">${escapeHtml(p.categoryLabel)}</span>
+                <span class="status-badge open">Open</span>
+                ${typeof p.distanceKm === "number" ? `<span class="distance-badge">📍 ${p.distanceKm} km away</span>` : ""}
+                ${p.is24x7 ? `<span class="badge-247">⚡ 24x7</span>` : ""}
+              </div>
+
+              <div class="card-top-info">
+                <div>
+                  <h3>${escapeHtml(p.name)}</h3>
+                  <div class="place-area">📍 ${escapeHtml(p.area)} · Tel: ${escapeHtml(p.phone)}</div>
+                </div>
+
+                <div class="card-queue-counters">
+                  <div class="token-serving-box">
+                    <small>Now Serving</small>
+                    <strong>#${p.servingToken || 12}</strong>
+                  </div>
+                  <div class="wait-box ${getWaitColorClass(w)}">
+                    <small>Est. Wait</small>
+                    <strong>${w === null ? "Paused" : w + " min"}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-meta-bar">
+                <span>Timings: <b>${escapeHtml(p.timings)}</b></span>
+                <span>OPD Consultation Fee: <b>${escapeHtml(p.fee)}</b></span>
+              </div>
+
+              ${hasDocs ? `
+                <button class="doc-trigger" onclick="toggleDoctorDrawer(${p.id})">
+                  <span>Resident Specialists (${p.doctors.length})</span> ▾
+                </button>
+                <div class="doctors-drawer" id="drawer-${p.id}">
+                  ${p.doctors.map(d => `
+                    <div class="doc-item-row">
+                      <div>
+                        <div class="doc-name">${escapeHtml(d.name)}</div>
+                        <div class="doc-spec">${escapeHtml(d.speciality)} · ${escapeHtml(d.days)}</div>
+                      </div>
+                      <div style="text-align:right;">
+                        <div style="font-weight:800;">${d.fee === 0 ? "Free OPD" : "₹" + d.fee}</div>
+                        <div style="font-size:11px;color:var(--muted);">${escapeHtml(d.hours)}</div>
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
+              ` : ""}
+
+              <div class="card-actions-row">
+                <button class="btn-opd-token" onclick="openOpdModal(${p.id})">
+                  🎫 Generate OPD Slip
+                </button>
+                <a href="${getMapsDirectionsUrl(p.name, p.area)}" target="_blank" rel="noopener noreferrer" class="btn-directions">
+                  🧭 Directions
+                </a>
+                <a href="tel:${escapeHtml(p.phone)}" class="btn-call">📞 Call</a>
+                <button class="btn-report-link" onclick="openReportModal(${p.id})">📝 Report</button>
+                <button class="btn-flag-link" onclick="openFalseClaimModal(${p.id})">Flag</button>
+              </div>
+
+              <div class="verified-note">
+                Verified ${p.lastVerified} mins ago · ~${p.people} waiting in line
+                ${getFalseClaimCount(p.id) ? `<span class="false-claim-badge">⚠ ${getFalseClaimCount(p.id)} report</span>` : ""}
+              </div>
+            </article>
+          `;
+        }).join("") : `
+          <div style="background:var(--surface);padding:40px 20px;border-radius:var(--radius-md);text-align:center;">
+            <h3>No facilities match your search criteria</h3>
+            <p style="color:var(--muted);margin-top:6px;">Try adjusting your keywords, disabling the 10 km radius, or clearing filters.</p>
+            <button class="gw-btn gw-btn-simple" style="max-width:240px;margin:14px auto 0;" onclick="resetAllFilters()">Reset All Filters</button>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+
+  // Attach search listeners cleanly
+  const sInput = el("mainSearchInput");
+  if (sInput) {
+    sInput.oninput = e => {
+      searchQuery = e.target.value;
+      render();
+      // Keep focus on input after re-render
+      const freshInput = el("mainSearchInput");
+      if (freshInput) {
+        freshInput.focus();
+        freshInput.selectionStart = freshInput.selectionEnd = freshInput.value.length;
+      }
+    };
+  }
+
+  const cBtn = el("clearSearchBtn");
+  if (cBtn) {
+    cBtn.onclick = () => {
+      searchQuery = "";
+      render();
+    };
+  }
+
+  const nearMeBtn = el("chipNearMeToggle");
+  if (nearMeBtn) {
+    nearMeBtn.onclick = () => {
+      if (filterWithin10Km) {
+        filterWithin10Km = false;
+        render();
+        showToast("Showing all facilities regardless of distance.");
+      } else {
+        trigger10KmNearMe();
+      }
+    };
+  }
+}
+
+function setQuickChip(chipName) {
+  activeQuickChip = (activeQuickChip === chipName) ? "" : chipName;
+  render();
+}
+
+function resetAllFilters() {
+  searchQuery = "";
+  activeCategory = "all";
+  activeQuickChip = "";
+  filterWithin10Km = false;
+  render();
+}
+
+function toggleDoctorDrawer(id) {
+  const d = el(`drawer-${id}`);
+  if (d) d.classList.toggle("open");
+}
+
+function renderActiveTokenHUDHTML() {
+  if (!activeEmergencyToken) return "";
+  return `
+    <div class="active-token-hud">
+      <div class="hud-left">
+        <span class="hud-pulse-dot"></span>
+        <div>
+          <div class="hud-title">ACTIVE TOKEN: <strong>${activeEmergencyToken.tokenId}</strong></div>
+          <div class="hud-sub">🏥 ${escapeHtml(activeEmergencyToken.hospitalName)} · Queue Status: #${activeEmergencyToken.queueNumber} Ahead · ${activeEmergencyToken.deptLabel || "Casualty"}</div>
+        </div>
+      </div>
+      <div class="hud-actions">
+        <button class="hud-btn-pass" onclick="openTokenPassModal()">🎫 View Slip</button>
+        <button class="hud-btn-print" onclick="printTokenSlip()">🖨️ Print Slip</button>
+      </div>
+    </div>
+  `;
+}
+
+// --- EMERGENCY VIEW ---
+function renderEmergencyView(container) {
+  let emergPlaces = places.filter(p => p.is24x7);
+
+  container.innerHTML = `
+    <div class="emergency-screen">
+      <div class="wrap" style="max-width:880px;">
+        <div class="emergency-top-nav">
+          <div>
+            <h1 style="color:var(--emergency-coral);margin:0 0 2px;font-size:24px;font-weight:850;">Tricity 24x7 Emergency Care</h1>
+            <p style="margin:0;color:var(--muted);font-size:13px;">Verified 24x7 emergency & trauma facilities across Chandigarh, Mohali & Panchkula.</p>
+          </div>
+          <button class="btn-back-simple" onclick="setMode('simple')">← Back to OPD Radar</button>
+        </div>
+
+        <div class="sos-banner-grid">
+          <a href="tel:108" class="huge-sos-btn">
+            <span style="font-size:32px;">🚑</span>
+            <div><div>Call 108 Ambulance</div><small>Chandigarh Tricity Dispatch</small></div>
+          </a>
+          <a href="tel:112" class="huge-sos-btn sos-112">
+            <span style="font-size:32px;">🚨</span>
+            <div><div>Call 112 Helpline</div><small>Unified Emergency Response</small></div>
+          </a>
+        </div>
+
+        <div class="cards-list">
+          ${emergPlaces.map(p => {
+            const w = getWaitTime(p);
+            return `
+              <div class="emerg-card">
+                <div class="emerg-card-head">
+                  <div>
+                    <div class="badge-row">
+                      <span class="cat-badge ${p.cat}">${escapeHtml(p.categoryLabel)}</span>
+                      <span class="badge-247">⚡ 24x7 Emergency</span>
+                      ${typeof p.distanceKm === "number" ? `<span class="distance-badge">📍 ${p.distanceKm} km</span>` : ""}
+                    </div>
+                    <h3>${escapeHtml(p.name)}</h3>
+                    <div class="place-area">📍 ${escapeHtml(p.area)} · Tel: ${escapeHtml(p.phone)}</div>
+                  </div>
+                  <div class="wait-box ${getWaitColorClass(w)}">
+                    <small>Est. Triage Wait</small>
+                    <strong>${w === null ? "—" : w + " min"}</strong>
+                  </div>
+                </div>
+
+                <div class="card-actions-row">
+                  <button class="btn-token" onclick="openTokenGeneratorModal(${p.id})">
+                    ⚡ Issue ER Token
+                  </button>
+                  <a href="tel:${escapeHtml(p.phone)}" class="btn-call" style="background:var(--emergency-coral);color:#fff;">
+                    📞 Call Casualty (${escapeHtml(p.phone)})
+                  </a>
+                  <a href="${getMapsDirectionsUrl(p.name, p.area)}" target="_blank" rel="noopener noreferrer" class="btn-directions">
+                    🧭 Directions
+                  </a>
+                  <button class="btn-flag-link" onclick="openFalseClaimModal(${p.id})">Report</button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ========================================================
+// 6. SEQUENTIAL TOKEN SYSTEM & PDF PRINT GENERATOR
+// ========================================================
+let tokenSequenceCounter = parseInt(localStorage.getItem("carenow_seq_counter") || "42", 10);
+
+function getNextSequentialToken(prefix = "OPD") {
+  tokenSequenceCounter += 1;
+  localStorage.setItem("carenow_seq_counter", tokenSequenceCounter.toString());
+  return `#${prefix}-${String(tokenSequenceCounter).padStart(3, "0")}`;
+}
+
+// OPD MODAL
+function openOpdModal(hospitalId) {
+  const sel = el("selectOpdHospital");
+  sel.innerHTML = places.map(p => `
+    <option value="${p.id}" ${p.id === hospitalId ? "selected" : ""}>
+      ${escapeHtml(p.name)} (${escapeHtml(p.area)})
+    </option>
+  `).join("");
+  el("opdTokenModalBackdrop").classList.add("show");
+}
+el("closeOpdModalBtn").onclick = () => el("opdTokenModalBackdrop").classList.remove("show");
+
+el("opdTokenForm").onsubmit = async e => {
+  e.preventDefault();
+  const hospId = Number(el("selectOpdHospital").value);
+  const hosp = places.find(p => p.id === hospId) || places[0];
+  const deptCode = el("selectOpdDepartment").value;
+  const deptLabel = el("selectOpdDepartment").selectedOptions[0].text;
+  const pName = el("opdPatientName").value.trim();
+  const pPhone = el("opdPatientPhone").value.trim();
+
+  // Generate strict sequential token (e.g. #OPD-MED-043)
+  const tokenCode = getNextSequentialToken(`OPD-${deptCode}`);
+
+  const token = {
+    tokenId: tokenCode,
+    type: "OPD",
+    createdAt: new Date().toISOString(),
+    hospitalId: hosp.id,
+    hospitalName: hosp.name,
+    hospitalArea: hosp.area,
+    hospitalPhone: hosp.phone,
+    patientName: pName,
+    patientPhone: pPhone,
+    deptLabel: deptLabel,
+    chiefComplaint: `Routine Consultation - ${deptLabel}`,
+    arrivalEta: "Today - General OPD Hours",
+    queueNumber: Math.max(1, (hosp.people || 10) - 8),
+    servingToken: hosp.servingToken || 25
+  };
+
+  saveActiveEmergencyToken(token);
+
+  // Sync to Supabase
+  if (sb) {
+    try {
+      await sb.from("emergency_tokens").insert([{
+        token_id: token.tokenId,
+        hospital_name: token.hospitalName,
+        patient_name: token.patientName,
+        patient_phone: token.patientPhone,
+        severity: "OPD Routine",
+        chief_complaint: token.chiefComplaint,
+        arrival_eta: token.arrivalEta,
+        created_at: token.createdAt
+      }]);
+    } catch (err) {}
+  }
+
+  el("opdTokenModalBackdrop").classList.remove("show");
+  render();
+  openTokenPassModal();
+  showToast(`Sequential Token ${tokenCode} generated successfully!`);
+};
+
+// EMERGENCY TOKEN MODAL
+function openTokenGeneratorModal(hospitalId) {
+  const sel = el("selectTokenHospital");
+  const emergHospitals = places.filter(p => p.is24x7);
+  sel.innerHTML = emergHospitals.map(h => `
+    <option value="${h.id}" ${h.id === hospitalId ? "selected" : ""}>
+      ${escapeHtml(h.name)} (${escapeHtml(h.area)})
+    </option>
+  `).join("");
+  el("tokenGeneratorBackdrop").classList.add("show");
+}
+el("closeTokenGenModalBtn").onclick = () => el("tokenGeneratorBackdrop").classList.remove("show");
+
+document.querySelectorAll("#triageSeverityGrid .chip").forEach(chip => {
+  chip.onclick = () => {
+    document.querySelectorAll("#triageSeverityGrid .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    el("selectedSeverityInput").value = chip.dataset.sev;
+  };
+});
+
+el("tokenGenForm").onsubmit = async e => {
+  e.preventDefault();
+  const hospId = Number(el("selectTokenHospital").value);
+  const hosp = places.find(p => p.id === hospId) || places[0];
+  const tokenCode = getNextSequentialToken("EMG");
+
+  const token = {
+    tokenId: tokenCode,
+    type: "EMERGENCY",
+    createdAt: new Date().toISOString(),
+    hospitalId: hosp.id,
+    hospitalName: hosp.name,
+    hospitalArea: hosp.area,
+    hospitalPhone: hosp.phone,
+    patientName: el("tokenPatientName").value.trim(),
+    patientPhone: el("tokenPatientPhone").value.trim(),
+    severity: el("selectedSeverityInput").value,
+    deptLabel: "24x7 Emergency Casualty",
+    chiefComplaint: el("tokenChiefComplaint").value.trim(),
+    arrivalEta: el("tokenEtaInput").value,
+    queueNumber: 2,
+    servingToken: hosp.servingToken || 12
+  };
+
+  saveActiveEmergencyToken(token);
+
+  if (sb) {
+    try {
+      await sb.from("emergency_tokens").insert([{
+        token_id: token.tokenId,
+        hospital_name: token.hospitalName,
+        patient_name: token.patientName,
+        patient_phone: token.patientPhone,
+        severity: token.severity,
+        chief_complaint: token.chiefComplaint,
+        arrival_eta: token.arrivalEta,
+        created_at: token.createdAt
+      }]);
+    } catch (err) {}
+  }
+
+  el("tokenGeneratorBackdrop").classList.remove("show");
+  render();
+  openTokenPassModal();
+  showToast(`Emergency Token ${tokenCode} transmitted to casualty reception!`);
+};
+
+// DIGITAL TOKEN PASS MODAL
+function openTokenPassModal() {
+  if (!activeEmergencyToken) return;
+  const t = activeEmergencyToken;
+
+  el("passTokenCode").textContent = t.tokenId;
+  el("passHospitalName").textContent = t.hospitalName;
+  el("passDeptLabel").textContent = t.deptLabel || t.hospitalArea;
+  el("passServingNow").textContent = `Now Serving: #${t.servingToken || 12}`;
+  el("passAheadCount").textContent = `${t.queueNumber || 2} Ahead in Queue`;
+  el("passPatientName").textContent = t.patientName + (t.patientPhone ? ` (${t.patientPhone})` : "");
+  el("passTimeEta").textContent = t.arrivalEta;
+  el("passDetails").textContent = t.chiefComplaint;
+
+  el("passCallHospitalBtn").href = `tel:${t.hospitalPhone}`;
+  el("passDirectionsBtn").href = getMapsDirectionsUrl(t.hospitalName, t.hospitalArea);
+
+  // Bind print and download buttons
+  const printBtn = el("passPrintBtn");
+  if (printBtn) printBtn.onclick = printTokenSlip;
+  const dlBtn = el("passDownloadFileBtn");
+  if (dlBtn) dlBtn.onclick = downloadTokenSlipFile;
+
+  el("tokenPassBackdrop").classList.add("show");
+}
+el("closeTokenPassModalBtn").onclick = () => el("tokenPassBackdrop").classList.remove("show");
+
+el("passDischargeBtn").onclick = () => {
+  if (confirm("Close or complete this token slip?")) {
+    saveActiveEmergencyToken(null);
+    el("tokenPassBackdrop").classList.remove("show");
+    render();
+    showToast("Token slip closed.");
+  }
+};
+
+// ========================================================
+// 100% BULLETPROOF PRINT & PDF GENERATOR
+// ========================================================
+function generateTokenSlipHTML(t) {
+  const timestamp = new Date(t.createdAt || Date.now()).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CareNow_Token_${escapeHtml(t.tokenId)}</title>
+<style>
+  @page { size: A4 portrait; margin: 12mm; }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #FFFFFF;
+    color: #0F172A;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .slip-box {
+    max-width: 540px;
+    margin: 0 auto;
+    border: 2px solid #0B2A43;
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    background: #FFFFFF;
+  }
+  .slip-head {
+    text-align: center;
+    border-bottom: 2px solid #0E7C86;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+  }
+  .gov-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: #E6F7F9;
+    color: #0E7C86;
+    padding: 4px 12px;
+    border-radius: 99px;
+    margin-bottom: 8px;
+  }
+  .hosp-title {
+    font-size: 22px;
+    font-weight: 900;
+    color: #0B2A43;
+    margin: 4px 0;
+    letter-spacing: -0.3px;
+  }
+  .hosp-sub {
+    font-size: 13px;
+    color: #475569;
+  }
+  .token-hero {
+    background: #F8FAFC;
+    border: 1.5px dashed #0E7C86;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .token-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #64748B;
+    letter-spacing: 0.8px;
+  }
+  .token-num {
+    font-size: 46px;
+    font-weight: 900;
+    color: #0E7C86;
+    font-family: ui-monospace, monospace;
+    letter-spacing: 2px;
+    margin: 4px 0;
+  }
+  .token-status {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #10B981;
+  }
+  .info-table {
+    width: 100%;
+    margin-bottom: 20px;
+    font-size: 14px;
+    border-collapse: collapse;
+  }
+  .info-table tr {
+    border-bottom: 1px dotted #E2E8F0;
+  }
+  .info-table td {
+    padding: 9px 4px;
+  }
+  .info-table td.lbl {
+    color: #64748B;
+    font-weight: 600;
+    width: 38%;
+  }
+  .info-table td.val {
+    color: #0F172A;
+    font-weight: 750;
+    text-align: right;
+  }
+  .barcode-strip {
+    text-align: center;
+    padding: 14px 0 10px;
+    border-top: 1px solid #E2E8F0;
+  }
+  .barcode-sim {
+    display: inline-flex;
+    gap: 3px;
+    height: 38px;
+    align-items: flex-end;
+  }
+  .barcode-sim div {
+    background: #0F172A;
+    border-radius: 1px;
+  }
+  .barcode-code {
+    font-size: 11px;
+    font-family: monospace;
+    color: #64748B;
+    margin-top: 4px;
+    letter-spacing: 2px;
+  }
+  .notice-box {
+    background: #FFFBEB;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 14px;
+    border-radius: 0 8px 8px 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #92400E;
+    margin-top: 16px;
+  }
+  .btn-print-bar {
+    text-align: center;
+    margin-top: 22px;
+  }
+  .btn-print-bar button {
+    background: #0E7C86;
+    color: #FFFFFF;
+    border: none;
+    padding: 12px 26px;
+    font-size: 15px;
+    font-weight: 800;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(14, 124, 134, 0.3);
+  }
+  @media print {
+    body { padding: 0 !important; background: transparent !important; }
+    .slip-box {
+      border: 2px solid #000000 !important;
+      box-shadow: none !important;
+      max-width: 100% !important;
+      padding: 16px !important;
+    }
+    .btn-print-bar { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="slip-box">
+  <div class="slip-head">
+    <div class="gov-badge">Tricity Healthcare Administration · Official Slip</div>
+    <div class="hosp-title">${escapeHtml(t.hospitalName)}</div>
+    <div class="hosp-sub">${escapeHtml(t.hospitalArea)} · Tel: ${escapeHtml(t.hospitalPhone || "0172-2756565")}</div>
+  </div>
+
+  <div class="token-hero">
+    <div class="token-label">${escapeHtml(t.type || "OPD")} Sequential Token</div>
+    <div class="token-num">${escapeHtml(t.tokenId)}</div>
+    <div class="token-status">● Live Queue Status: Active / Serving Now: #${t.servingToken || 12}</div>
+  </div>
+
+  <table class="info-table">
+    <tr>
+      <td class="lbl">Patient Name:</td>
+      <td class="val">${escapeHtml(t.patientName)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Contact Mobile:</td>
+      <td class="val">${escapeHtml(t.patientPhone || "Not provided")}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Department / Ward:</td>
+      <td class="val">${escapeHtml(t.deptLabel || "General Medicine")}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Issued Timestamp:</td>
+      <td class="val">${timestamp}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Estimated Slot / ETA:</td>
+      <td class="val">${escapeHtml(t.arrivalEta || "Immediate")}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Chief Complaint:</td>
+      <td class="val">${escapeHtml(t.chiefComplaint || "Routine Consultation")}</td>
+    </tr>
+  </table>
+
+  <div class="barcode-strip">
+    <div class="barcode-sim">
+      <div style="width:3px;height:34px;"></div>
+      <div style="width:1.5px;height:28px;"></div>
+      <div style="width:4px;height:36px;"></div>
+      <div style="width:2px;height:26px;"></div>
+      <div style="width:3px;height:32px;"></div>
+      <div style="width:1px;height:24px;"></div>
+      <div style="width:3.5px;height:34px;"></div>
+      <div style="width:2px;height:30px;"></div>
+      <div style="width:4px;height:36px;"></div>
+      <div style="width:1.5px;height:26px;"></div>
+      <div style="width:3px;height:34px;"></div>
+    </div>
+    <div class="barcode-code">TRICITY-${escapeHtml(t.tokenId).replace(/[^a-zA-Z0-9]/g, '')}-${Date.now().toString().slice(-4)}</div>
+  </div>
+
+  <div class="notice-box">
+    <strong>Instructions for Patient:</strong> Please report to Counter 1 / Registration Desk 10 minutes prior to slot. Present this digital slip or PDF on phone. For emergency ambulance dispatch dial 108 / 112.
+  </div>
+
+  <div class="btn-print-bar">
+    <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+function printTokenSlip() {
+  if (!activeEmergencyToken) {
+    showToast("No active token found to print.");
+    return;
+  }
+  const t = activeEmergencyToken;
+
+  // 1. Also update in-page print container for native Ctrl+P
+  const ptHosp = el("ptHospitalName");
+  if (ptHosp) ptHosp.textContent = `${t.hospitalName} (${t.hospitalArea})`;
+  const ptDept = el("ptDeptName");
+  if (ptDept) ptDept.textContent = `Department / Category: ${t.deptLabel || "Emergency & General Care"}`;
+  const ptCode = el("ptTokenCode");
+  if (ptCode) ptCode.textContent = t.tokenId;
+  const ptName = el("ptPatientName");
+  if (ptName) ptName.textContent = t.patientName;
+  const ptPhone = el("ptPatientPhone");
+  if (ptPhone) ptPhone.textContent = t.patientPhone;
+  const ptTime = el("ptTimestamp");
+  if (ptTime) ptTime.textContent = new Date(t.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+  const ptEta = el("ptArrivalEta");
+  if (ptEta) ptEta.textContent = t.arrivalEta;
+  const ptComp = el("ptComplaint");
+  if (ptComp) ptComp.textContent = t.chiefComplaint;
+
+  const slipHtml = generateTokenSlipHTML(t);
+
+  // 2. Open via hidden dedicated print iframe (zero popup blocker issues, clean preview)
+  try {
+    let iframe = document.getElementById("hiddenReceiptPrintIframe");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "hiddenReceiptPrintIframe";
+      iframe.style.position = "fixed";
+      iframe.style.right = "-9999px";
+      iframe.style.bottom = "-9999px";
+      iframe.style.width = "10px";
+      iframe.style.height = "10px";
+      iframe.style.border = "none";
+      document.body.appendChild(iframe);
+    }
+
+    const frameDoc = iframe.contentWindow || iframe.contentDocument;
+    const doc = frameDoc.document || frameDoc;
+    doc.open();
+    doc.write(slipHtml);
+    doc.close();
+
+    showToast("Opening printer & PDF dialog...");
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } catch (e) {
+        // Fallback to window open if iframe print is blocked by environment
+        openPrintPopupFallback(slipHtml);
+      }
+    }, 450);
+
+  } catch (err) {
+    console.warn("Iframe print fallback:", err);
+    openPrintPopupFallback(slipHtml);
+  }
+}
+
+function openPrintPopupFallback(slipHtml) {
+  try {
+    const pWin = window.open("", "_blank", "width=640,height=800");
+    if (pWin) {
+      pWin.document.open();
+      pWin.document.write(slipHtml);
+      pWin.document.close();
+      pWin.focus();
+      setTimeout(() => { pWin.print(); }, 500);
+    } else {
+      // If popup was blocked, fallback to main window.print()
+      window.print();
+    }
+  } catch (e) {
+    window.print();
+  }
+}
+
+function downloadTokenSlipFile() {
+  if (!activeEmergencyToken) {
+    showToast("No active token to download.");
+    return;
+  }
+  const t = activeEmergencyToken;
+  const slipHtml = generateTokenSlipHTML(t);
+  const blob = new Blob([slipHtml], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const cleanId = (t.tokenId || "slip").replace(/[^a-zA-Z0-9_-]/g, "");
+  a.download = `CareNow_Tricity_Token_${cleanId}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded Token Ticket: CareNow_Tricity_Token_${cleanId}.html`);
+}
+
+// Global button binding
+const passPrintBtnGlobal = el("passPrintBtn");
+if (passPrintBtnGlobal) passPrintBtnGlobal.onclick = printTokenSlip;
+const passDlBtnGlobal = el("passDownloadFileBtn");
+if (passDlBtnGlobal) passDlBtnGlobal.onclick = downloadTokenSlipFile;
+
+// REPORT MODAL
+function openReportModal(placeId) {
+  const sel = el("selectPlaceToReport");
+  sel.innerHTML = places.map(p => `
+    <option value="${p.id}" ${p.id === placeId ? "selected" : ""}>
+      ${escapeHtml(p.name)} (${escapeHtml(p.area)})
+    </option>
+  `).join("");
+  el("reportBackdrop").classList.add("show");
+}
+el("closeReportModalBtn").onclick = () => el("reportBackdrop").classList.remove("show");
+el("reportForm").onsubmit = e => {
+  e.preventDefault();
+  const placeId = Number(el("selectPlaceToReport").value);
+  const p = places.find(x => x.id === placeId);
+  if (p) {
+    p.people = Number(el("queueNumberInput").value);
+    p.speed = el("lineSpeedInput").value;
+    p.lastVerified = 0;
+    p.reportTimestamp = new Date().toISOString();
+    savePlaces();
+    el("reportBackdrop").classList.remove("show");
+    render();
+    showToast(`Queue report recorded for ${p.name}!`);
+  }
+};
+
+// FALSE CLAIM MODAL
+function openFalseClaimModal(placeId) {
+  const sel = el("selectPlaceToFlag");
+  sel.innerHTML = places.map(p => `
+    <option value="${p.id}" ${p.id === placeId ? "selected" : ""}>
+      ${escapeHtml(p.name)} (${escapeHtml(p.area)})
+    </option>
+  `).join("");
+  el("falseClaimDetails").value = "";
+  el("falseClaimBackdrop").classList.add("show");
+}
+el("closeFalseClaimModalBtn").onclick = () => el("falseClaimBackdrop").classList.remove("show");
+el("falseClaimForm").onsubmit = e => {
+  e.preventDefault();
+  const placeId = Number(el("selectPlaceToFlag").value);
+  const p = places.find(x => x.id === placeId);
+  const details = el("falseClaimDetails").value.trim();
+  if (p && details) {
+    falseClaims.unshift({
+      id: Date.now(),
+      placeId: p.id,
+      placeName: p.name,
+      details,
+      createdAt: new Date().toISOString()
+    });
+    saveFalseClaims();
+    el("falseClaimBackdrop").classList.remove("show");
+    render();
+    showToast(`Report received for ${p.name}. Data will be audited.`);
+  }
+};
+
+// Bottom Bar Navigation
+el("mBtnHome").onclick = () => { filterWithin10Km = false; setMode("gateway"); };
+el("mBtnSearch").onclick = () => { filterWithin10Km = false; setMode("simple"); };
+el("mBtnNearMe").onclick = trigger10KmNearMe;
+el("mBtnEmergency").onclick = () => setMode("emergency");
+
+// Real-time counter progression simulation for dynamic waiting experience
+setInterval(() => {
+  places.forEach(p => {
+    // Increment serving token realistically every few minutes
+    if (Math.random() > 0.6) {
+      p.servingToken = (p.servingToken || 10) + 1;
+    }
+  });
+  savePlaces();
+  if (currentMode === "simple") render();
+}, 45000);
+
+// Supabase Realtime Subscription Channel
+if (sb) {
+  try {
+    sb.channel('realtime_tricity')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emergency_tokens' }, payload => {
+        showToast("Live Update: New token issued in Tricity network!");
+      })
+      .subscribe();
+  } catch (err) {}
+}
+
+// Global escape key handler
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    document.querySelectorAll(".backdrop.show").forEach(b => b.classList.remove("show"));
+  }
+});
+
+// Boot application
+cleanStale24HourData();
+render();
+</script>
+</body>
+</html>
